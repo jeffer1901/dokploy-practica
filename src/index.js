@@ -1,4 +1,5 @@
 const express = require('express');
+const mysql = require('mysql2/promise');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -32,6 +33,23 @@ app.get('/info', (req, res) => {
       free: Math.round(require('os').freemem() / 1024 / 1024) + ' MB'
     }
   });
+});
+
+app.get('/db', async (req, res) => {
+  try {
+    const conn = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT || 3306,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME
+    });
+    const [rows] = await conn.query('SELECT NOW() AS hora, DATABASE() AS base');
+    await conn.end();
+    res.json({ conexion: 'ok', resultado: rows[0] });
+  } catch (e) {
+    res.status(500).json({ conexion: 'error', detalle: e.message });
+  }
 });
 
 app.listen(port, '0.0.0.0', () => {
